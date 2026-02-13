@@ -43,15 +43,30 @@ jobs:
           const PROJECT_ID = "anime-wallpaper-54b95";
           const RC_PARAM_KEY = "staging_wallpaper_data_source_v3";
 
-          // Find a parameter in top-level parameters or inside parameterGroups
+          // Find a parameter and remove duplicates.
+          // If key exists in both parameters AND parameterGroups, delete from top-level
+          // and keep only the parameterGroups copy (since that's how Firebase Console organizes them).
           function findParam(rcData, key) {
-            if (rcData.parameters?.[key]) return rcData.parameters[key];
+            let inTopLevel = rcData.parameters?.[key] || null;
+            let inGroup = null;
+
             if (rcData.parameterGroups) {
               for (const group of Object.values(rcData.parameterGroups)) {
-                if (group.parameters?.[key]) return group.parameters[key];
+                if (group.parameters?.[key]) {
+                  inGroup = group.parameters[key];
+                  break;
+                }
               }
             }
-            return null;
+
+            // If key exists in both places, remove from top-level to avoid DUPLICATE_KEY
+            if (inTopLevel && inGroup) {
+              console.log(`  Dedup: removing "${key}" from top-level parameters (keeping parameterGroups copy)`);
+              delete rcData.parameters[key];
+              return inGroup;
+            }
+
+            return inGroup || inTopLevel || null;
           }
 
           async function main() {
