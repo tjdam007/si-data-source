@@ -15,10 +15,8 @@ jobs:
       - name: Find new meta.json files
         id: find-meta
         run: |
-          # Get the meta.json files that were added/modified in this push
           META_FILES=$(git diff --name-only HEAD~1 HEAD -- 'awv2/*.meta.json' 2>/dev/null || echo "")
           if [ -z "$META_FILES" ]; then
-            # Fallback: find all meta.json files changed in this commit
             META_FILES=$(git log -1 --name-only --diff-filter=AM --pretty=format: -- 'awv2/*.meta.json')
           fi
           echo "files=$META_FILES" >> "$GITHUB_OUTPUT"
@@ -43,37 +41,46 @@ jobs:
           const PROJECT_ID = "anime-wallpaper-54b95";
           const RC_PARAM_KEY = "staging_wallpaper_data_source_v3";
 
-          // Find a parameter and remove duplicates.
-          // If key exists in both parameters AND parameterGroups, delete from top-level
-          // and keep only the parameterGroups copy (since that's how Firebase Console organizes them).
-          function findParam(rcData, key) {
-            let inTopLevel = rcData.parameters?.[key] || null;
-            let inGroup = null;
+          // Extract current value for a key, then DELETE it from everywhere in rcData
+          function extractAndRemove(rcData, key) {
+            let value = null;
 
+            // Check top-level parameters
+            if (rcData.parameters?.[key]) {
+              value = rcData.parameters[key].defaultValue?.value || null;
+              console.log(`  Found "${key}" in top-level parameters — removing`);
+              delete rcData.parameters[key];
+            }
+
+            // Check ALL parameterGroups
             if (rcData.parameterGroups) {
-              for (const group of Object.values(rcData.parameterGroups)) {
+              for (const [groupName, group] of Object.entries(rcData.parameterGroups)) {
                 if (group.parameters?.[key]) {
-                  inGroup = group.parameters[key];
-                  break;
+                  if (!value) {
+                    value = group.parameters[key].defaultValue?.value || null;
+                  }
+                  console.log(`  Found "${key}" in parameterGroup "${groupName}" — removing`);
+                  delete group.parameters[key];
+
+                  // If group is now empty, remove the group too
+                  if (Object.keys(group.parameters).length === 0) {
+                    delete rcData.parameterGroups[groupName];
+                  }
                 }
+              }
+
+              // If parameterGroups is now empty, remove it
+              if (Object.keys(rcData.parameterGroups).length === 0) {
+                delete rcData.parameterGroups;
               }
             }
 
-            // If key exists in both places, remove from top-level to avoid DUPLICATE_KEY
-            if (inTopLevel && inGroup) {
-              console.log(`  Dedup: removing "${key}" from top-level parameters (keeping parameterGroups copy)`);
-              delete rcData.parameters[key];
-              return inGroup;
-            }
-
-            return inGroup || inTopLevel || null;
+            return value;
           }
 
           async function main() {
-            // Parse service account from secret
             const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-            // Get access token
             const auth = new GoogleAuth({
               credentials: serviceAccount,
               scopes: ["https://www.googleapis.com/auth/firebase.remoteconfig"],
@@ -99,20 +106,26 @@ jobs:
             const etag = getRes.headers.get("etag");
             const rcData = await getRes.json();
 
-            // 2. Find the parameter (could be in top-level parameters or inside parameterGroups)
-            let paramRef = findParam(rcData, RC_PARAM_KEY);
+            // Debug: log structure
+            console.log("Top-level parameter keys:", Object.keys(rcData.parameters || {}));
+            if (rcData.parameterGroups) {
+              for (const [name, group] of Object.entries(rcData.parameterGroups)) {
+                console.log(`ParameterGroup "${name}" keys:`, Object.keys(group.parameters || {}));
+              }
+            }
+
+            // 2. Extract current value and remove key from ALL locations
+            const currentValue = extractAndRemove(rcData, RC_PARAM_KEY);
             let dataSource;
-            if (paramRef) {
-              dataSource = JSON.parse(paramRef.defaultValue.value);
+            if (currentValue) {
+              dataSource = JSON.parse(currentValue);
             } else {
               dataSource = { version: 1, data: [] };
             }
 
             // 3. Read meta.json files and append new packs
-            const metaFiles = process.env.META_FILES?.split("\n").filter(Boolean) || [];
-            // Also scan for any meta files from git diff
             const gitFiles = `${{ steps.find-meta.outputs.files }}`.split("\n").filter(Boolean);
-            const allFiles = [...new Set([...metaFiles, ...gitFiles])];
+            const allFiles = [...new Set(gitFiles)];
 
             for (const filePath of allFiles) {
               if (!filePath || !fs.existsSync(filePath)) continue;
@@ -120,7 +133,6 @@ jobs:
               const meta = JSON.parse(fs.readFileSync(filePath, "utf8"));
               console.log(`Processing: ${meta.pack_name} (${meta.total} wallpapers)`);
 
-              // Check for duplicate by pack_name
               const existingIndex = dataSource.data.findIndex(
                 (p) => p.pack_name === meta.pack_name
               );
@@ -133,14 +145,11 @@ jobs:
               }
             }
 
-            // 4. PUT updated Remote Config — update in-place wherever the key lives
-            if (!paramRef) {
-              // Key doesn't exist anywhere, add to top-level parameters
-              if (!rcData.parameters) rcData.parameters = {};
-              rcData.parameters[RC_PARAM_KEY] = { defaultValue: { value: "" } };
-              paramRef = rcData.parameters[RC_PARAM_KEY];
-            }
-            paramRef.defaultValue.value = JSON.stringify(dataSource);
+            // 4. Add key back in ONE place only (top-level parameters)
+            if (!rcData.parameters) rcData.parameters = {};
+            rcData.parameters[RC_PARAM_KEY] = {
+              defaultValue: { value: JSON.stringify(dataSource) },
+            };
 
             const putRes = await fetch(rcUrl, {
               method: "PUT",
