@@ -26,6 +26,37 @@ jobs:
           const STAGING_KEY = "staging_wallpaper_data_source_v3";
           const PROD_KEY = "wallpaper_data_source_v3";
 
+          // Extract current value for a key, then DELETE it from everywhere
+          function extractAndRemove(rcData, key) {
+            let value = null;
+
+            if (rcData.parameters?.[key]) {
+              value = rcData.parameters[key].defaultValue?.value || null;
+              delete rcData.parameters[key];
+            }
+
+            if (rcData.parameterGroups) {
+              for (const [groupName, group] of Object.entries(rcData.parameterGroups)) {
+                if (group.parameters?.[key]) {
+                  if (!value) {
+                    value = group.parameters[key].defaultValue?.value || null;
+                  }
+                  delete group.parameters[key];
+
+                  if (Object.keys(group.parameters).length === 0) {
+                    delete rcData.parameterGroups[groupName];
+                  }
+                }
+              }
+
+              if (Object.keys(rcData.parameterGroups).length === 0) {
+                delete rcData.parameterGroups;
+              }
+            }
+
+            return value;
+          }
+
           async function main() {
             const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
@@ -54,23 +85,28 @@ jobs:
             const etag = getRes.headers.get("etag");
             const rcData = await getRes.json();
 
-            // 2. Read staging value
-            const stagingValue = rcData.parameters?.[STAGING_KEY]?.defaultValue?.value;
+            // 2. Extract staging value (and remove from all locations)
+            const stagingValue = extractAndRemove(rcData, STAGING_KEY);
             if (!stagingValue) {
               throw new Error("No staging data found in Remote Config.");
             }
 
-            // Validate it's valid JSON
             const parsed = JSON.parse(stagingValue);
             console.log(`Staging has ${parsed.data?.length || 0} packs.`);
 
-            // 3. Copy staging value to production
-            if (!rcData.parameters[PROD_KEY]) {
-              rcData.parameters[PROD_KEY] = { defaultValue: {} };
-            }
-            rcData.parameters[PROD_KEY].defaultValue.value = stagingValue;
+            // 3. Remove prod key from all locations too
+            extractAndRemove(rcData, PROD_KEY);
 
-            // 4. PUT updated Remote Config
+            // 4. Add both keys back in top-level parameters only
+            if (!rcData.parameters) rcData.parameters = {};
+            rcData.parameters[STAGING_KEY] = {
+              defaultValue: { value: stagingValue },
+            };
+            rcData.parameters[PROD_KEY] = {
+              defaultValue: { value: stagingValue },
+            };
+
+            // 5. PUT updated Remote Config
             const putRes = await fetch(rcUrl, {
               method: "PUT",
               headers: {
