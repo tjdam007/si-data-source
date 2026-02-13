@@ -1,0 +1,139 @@
+name: Update Staging Remote Config
+
+on:
+  push:
+    paths:
+      - "awv2/**.meta.json"
+
+jobs:
+  update-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find new meta.json files
+        id: find-meta
+        run: |
+          # Get the meta.json files that were added/modified in this push
+          META_FILES=$(git diff --name-only HEAD~1 HEAD -- 'awv2/*.meta.json' 2>/dev/null || echo "")
+          if [ -z "$META_FILES" ]; then
+            # Fallback: find all meta.json files changed in this commit
+            META_FILES=$(git log -1 --name-only --diff-filter=AM --pretty=format: -- 'awv2/*.meta.json')
+          fi
+          echo "files=$META_FILES" >> "$GITHUB_OUTPUT"
+          echo "Found meta files: $META_FILES"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install google-auth-library
+        run: npm install google-auth-library
+
+      - name: Update Firebase Remote Config (Staging)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node << 'SCRIPT'
+          const fs = require("fs");
+          const { GoogleAuth } = require("google-auth-library");
+
+          const PROJECT_ID = "anime-wallpaper-54b95";
+          const RC_PARAM_KEY = "staging_wallpaper_data_source_v3";
+
+          async function main() {
+            // Parse service account from secret
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+            // Get access token
+            const auth = new GoogleAuth({
+              credentials: serviceAccount,
+              scopes: ["https://www.googleapis.com/auth/firebase.remoteconfig"],
+            });
+            const client = await auth.getClient();
+            const tokenRes = await client.getAccessToken();
+            const accessToken = tokenRes.token;
+
+            const rcUrl = `https://firebaseremoteconfig.googleapis.com/v1/projects/${PROJECT_ID}/remoteConfig`;
+
+            // 1. GET current Remote Config
+            const getRes = await fetch(rcUrl, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json",
+              },
+            });
+
+            if (!getRes.ok) {
+              throw new Error(`GET Remote Config failed: ${getRes.status} ${await getRes.text()}`);
+            }
+
+            const etag = getRes.headers.get("etag");
+            const rcData = await getRes.json();
+
+            // 2. Parse current DataSource from the parameter
+            let dataSource;
+            const paramValue = rcData.parameters?.[RC_PARAM_KEY]?.defaultValue?.value;
+            if (paramValue) {
+              dataSource = JSON.parse(paramValue);
+            } else {
+              dataSource = { version: 1, data: [] };
+            }
+
+            // 3. Read meta.json files and append new packs
+            const metaFiles = process.env.META_FILES?.split("\n").filter(Boolean) || [];
+            // Also scan for any meta files from git diff
+            const gitFiles = `${{ steps.find-meta.outputs.files }}`.split("\n").filter(Boolean);
+            const allFiles = [...new Set([...metaFiles, ...gitFiles])];
+
+            for (const filePath of allFiles) {
+              if (!filePath || !fs.existsSync(filePath)) continue;
+
+              const meta = JSON.parse(fs.readFileSync(filePath, "utf8"));
+              console.log(`Processing: ${meta.pack_name} (${meta.total} wallpapers)`);
+
+              // Check for duplicate by pack_name
+              const existingIndex = dataSource.data.findIndex(
+                (p) => p.pack_name === meta.pack_name
+              );
+              if (existingIndex >= 0) {
+                console.log(`  Replacing existing pack: ${meta.pack_name}`);
+                dataSource.data[existingIndex] = meta;
+              } else {
+                console.log(`  Appending new pack: ${meta.pack_name}`);
+                dataSource.data.push(meta);
+              }
+            }
+
+            // 4. PUT updated Remote Config
+            if (!rcData.parameters) rcData.parameters = {};
+            if (!rcData.parameters[RC_PARAM_KEY]) {
+              rcData.parameters[RC_PARAM_KEY] = { defaultValue: {} };
+            }
+            rcData.parameters[RC_PARAM_KEY].defaultValue.value = JSON.stringify(dataSource);
+
+            const putRes = await fetch(rcUrl, {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json; UTF-8",
+                "If-Match": etag,
+              },
+              body: JSON.stringify(rcData),
+            });
+
+            if (!putRes.ok) {
+              throw new Error(`PUT Remote Config failed: ${putRes.status} ${await putRes.text()}`);
+            }
+
+            console.log("Staging Remote Config updated successfully!");
+            console.log(`Total packs: ${dataSource.data.length}`);
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          SCRIPT
