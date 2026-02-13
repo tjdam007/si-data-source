@@ -140,8 +140,8 @@ jobs:
                 console.log(`  Replacing existing pack: ${meta.pack_name}`);
                 dataSource.data[existingIndex] = meta;
               } else {
-                console.log(`  Appending new pack: ${meta.pack_name}`);
-                dataSource.data.push(meta);
+                console.log(`  Prepending new pack: ${meta.pack_name}`);
+                dataSource.data.unshift(meta);
               }
             }
 
@@ -149,6 +149,7 @@ jobs:
             if (!rcData.parameters) rcData.parameters = {};
             rcData.parameters[RC_PARAM_KEY] = {
               defaultValue: { value: JSON.stringify(dataSource) },
+              valueType: "JSON",
             };
 
             const putRes = await fetch(rcUrl, {
