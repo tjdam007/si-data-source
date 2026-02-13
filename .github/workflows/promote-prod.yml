@@ -1,0 +1,96 @@
+name: Promote Staging to Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install google-auth-library
+        run: npm install google-auth-library
+
+      - name: Copy Staging to Production Remote Config
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node << 'SCRIPT'
+          const { GoogleAuth } = require("google-auth-library");
+
+          const PROJECT_ID = "anime-wallpaper-54b95";
+          const STAGING_KEY = "staging_wallpaper_data_source_v3";
+          const PROD_KEY = "wallpaper_data_source_v3";
+
+          async function main() {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+            const auth = new GoogleAuth({
+              credentials: serviceAccount,
+              scopes: ["https://www.googleapis.com/auth/firebase.remoteconfig"],
+            });
+            const client = await auth.getClient();
+            const tokenRes = await client.getAccessToken();
+            const accessToken = tokenRes.token;
+
+            const rcUrl = `https://firebaseremoteconfig.googleapis.com/v1/projects/${PROJECT_ID}/remoteConfig`;
+
+            // 1. GET current Remote Config
+            const getRes = await fetch(rcUrl, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json",
+              },
+            });
+
+            if (!getRes.ok) {
+              throw new Error(`GET Remote Config failed: ${getRes.status} ${await getRes.text()}`);
+            }
+
+            const etag = getRes.headers.get("etag");
+            const rcData = await getRes.json();
+
+            // 2. Read staging value
+            const stagingValue = rcData.parameters?.[STAGING_KEY]?.defaultValue?.value;
+            if (!stagingValue) {
+              throw new Error("No staging data found in Remote Config.");
+            }
+
+            // Validate it's valid JSON
+            const parsed = JSON.parse(stagingValue);
+            console.log(`Staging has ${parsed.data?.length || 0} packs.`);
+
+            // 3. Copy staging value to production
+            if (!rcData.parameters[PROD_KEY]) {
+              rcData.parameters[PROD_KEY] = { defaultValue: {} };
+            }
+            rcData.parameters[PROD_KEY].defaultValue.value = stagingValue;
+
+            // 4. PUT updated Remote Config
+            const putRes = await fetch(rcUrl, {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json; UTF-8",
+                "If-Match": etag,
+              },
+              body: JSON.stringify(rcData),
+            });
+
+            if (!putRes.ok) {
+              throw new Error(`PUT Remote Config failed: ${putRes.status} ${await putRes.text()}`);
+            }
+
+            console.log("Production Remote Config updated successfully!");
+            console.log(`Promoted ${parsed.data?.length || 0} packs to production.`);
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          SCRIPT
