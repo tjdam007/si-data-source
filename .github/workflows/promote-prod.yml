@@ -101,9 +101,11 @@ jobs:
             if (!rcData.parameters) rcData.parameters = {};
             rcData.parameters[STAGING_KEY] = {
               defaultValue: { value: stagingValue },
+              valueType: "JSON",
             };
             rcData.parameters[PROD_KEY] = {
               defaultValue: { value: stagingValue },
+              valueType: "JSON",
             };
 
             // 5. PUT updated Remote Config
