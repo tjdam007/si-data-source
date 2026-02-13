@@ -1,0 +1,200 @@
+{
+  "pack_name": "Dragon Ball Super Wallpapers Pack 13Feb2026",
+  "created_at": 1770977879,
+  "total": 292,
+  "source": "https://github.com/tjdam007/si-data-source/raw/refs/heads/master/awv2/DragonBallSuperWallpapersPack13Feb2026.zip",
+  "key": "3410B15C-6F69-491F-8567-70B963CF599D",
+  "isDownloaded": false,
+  "sample": [
+    {
+      "image_signature": "bc00bf83ad04d4ca9163b237f8f2f848",
+      "title": "dragon ball super wallpapers",
+      "dominant_color": "#70716f",
+      "should_open_in_stream": false,
+      "seo_alt_text": "an image of anime characters flying in the sky with their heads tilted to look like they are",
+      "image_crop": {
+        "min_y": 0,
+        "max_y": 0.8862385321100918
+      },
+      "images": {
+        "170x": {
+          "width": 236,
+          "height": 559,
+          "url": "https://i.pinimg.com/236x/bc/00/bf/bc00bf83ad04d4ca9163b237f8f2f848.jpg"
+        },
+        "236x": {
+          "width": 236,
+          "height": 559,
+          "url": "https://i.pinimg.com/236x/bc/00/bf/bc00bf83ad04d4ca9163b237f8f2f848.jpg"
+        },
+        "474x": {
+          "width": 474,
+          "height": 1123,
+          "url": "https://i.pinimg.com/474x/bc/00/bf/bc00bf83ad04d4ca9163b237f8f2f848.jpg"
+        },
+        "736x": {
+          "width": 736,
+          "height": 1744,
+          "url": "https://i.pinimg.com/736x/bc/00/bf/bc00bf83ad04d4ca9163b237f8f2f848.jpg"
+        },
+        "orig": {
+          "width": 736,
+          "height": 1744,
+          "url": "https://i.pinimg.com/originals/bc/00/bf/bc00bf83ad04d4ca9163b237f8f2f848.jpg"
+        }
+      }
+    },
+    {
+      "image_signature": "aa59d48dc1e4431d4d3bb020bd218eba",
+      "title": "dragon ball super wallpapers",
+      "dominant_color": "#7679df",
+      "should_open_in_stream": false,
+      "seo_alt_text": "the dragon ball super saishi is surrounded by blue and purple lightening, as well as an image of gohan",
+      "image_crop": {
+        "min_y": 0,
+        "max_y": 1
+      },
+      "images": {
+        "170x": {
+          "width": 236,
+          "height": 434,
+          "url": "https://i.pinimg.com/236x/aa/59/d4/aa59d48dc1e4431d4d3bb020bd218eba.jpg"
+        },
+        "236x": {
+          "width": 236,
+          "height": 434,
+          "url": "https://i.pinimg.com/236x/aa/59/d4/aa59d48dc1e4431d4d3bb020bd218eba.jpg"
+        },
+        "474x": {
+          "width": 474,
+          "height": 872,
+          "url": "https://i.pinimg.com/474x/aa/59/d4/aa59d48dc1e4431d4d3bb020bd218eba.jpg"
+        },
+        "736x": {
+          "width": 736,
+          "height": 1354,
+          "url": "https://i.pinimg.com/736x/aa/59/d4/aa59d48dc1e4431d4d3bb020bd218eba.jpg"
+        },
+        "orig": {
+          "width": 736,
+          "height": 1354,
+          "url": "https://i.pinimg.com/originals/aa/59/d4/aa59d48dc1e4431d4d3bb020bd218eba.jpg"
+        }
+      }
+    },
+    {
+      "image_signature": "a603f29b74c7a0173b0956a02ac86bce",
+      "title": "dragon ball super wallpapers",
+      "dominant_color": "#2b2d96",
+      "should_open_in_stream": false,
+      "seo_alt_text": "Set as Wallpaper",
+      "image_crop": {
+        "min_y": 0,
+        "max_y": 1
+      },
+      "images": {
+        "170x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/a6/03/f2/a603f29b74c7a0173b0956a02ac86bce.jpg"
+        },
+        "236x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/a6/03/f2/a603f29b74c7a0173b0956a02ac86bce.jpg"
+        },
+        "474x": {
+          "width": 474,
+          "height": 842,
+          "url": "https://i.pinimg.com/474x/a6/03/f2/a603f29b74c7a0173b0956a02ac86bce.jpg"
+        },
+        "736x": {
+          "width": 576,
+          "height": 1024,
+          "url": "https://i.pinimg.com/736x/a6/03/f2/a603f29b74c7a0173b0956a02ac86bce.jpg"
+        },
+        "orig": {
+          "width": 576,
+          "height": 1024,
+          "url": "https://i.pinimg.com/originals/a6/03/f2/a603f29b74c7a0173b0956a02ac86bce.jpg"
+        }
+      }
+    },
+    {
+      "image_signature": "ac9e06ecdab79e20f478e2e72f42a184",
+      "title": "dragon ball super wallpapers",
+      "dominant_color": "#2d3e42",
+      "should_open_in_stream": true,
+      "seo_alt_text": "the dragon ball super saishi is shown in this image",
+      "image_crop": {
+        "min_y": 0,
+        "max_y": 1
+      },
+      "images": {
+        "170x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/ac/9e/06/ac9e06ecdab79e20f478e2e72f42a184.jpg"
+        },
+        "236x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/ac/9e/06/ac9e06ecdab79e20f478e2e72f42a184.jpg"
+        },
+        "474x": {
+          "width": 474,
+          "height": 842,
+          "url": "https://i.pinimg.com/474x/ac/9e/06/ac9e06ecdab79e20f478e2e72f42a184.jpg"
+        },
+        "736x": {
+          "width": 576,
+          "height": 1024,
+          "url": "https://i.pinimg.com/736x/ac/9e/06/ac9e06ecdab79e20f478e2e72f42a184.jpg"
+        },
+        "orig": {
+          "width": 576,
+          "height": 1024,
+          "url": "https://i.pinimg.com/originals/ac/9e/06/ac9e06ecdab79e20f478e2e72f42a184.jpg"
+        }
+      }
+    },
+    {
+      "image_signature": "8bb77abf0a4ea3c87e7da234dd1ace7e",
+      "title": "dragon ball super wallpapers",
+      "dominant_color": "#351a1a",
+      "should_open_in_stream": false,
+      "seo_alt_text": "an anime character is flying through the air with his arms out and one hand in the air",
+      "image_crop": {
+        "min_y": 0,
+        "max_y": 1
+      },
+      "images": {
+        "170x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/8b/b7/7a/8bb77abf0a4ea3c87e7da234dd1ace7e.jpg"
+        },
+        "236x": {
+          "width": 236,
+          "height": 419,
+          "url": "https://i.pinimg.com/236x/8b/b7/7a/8bb77abf0a4ea3c87e7da234dd1ace7e.jpg"
+        },
+        "474x": {
+          "width": 474,
+          "height": 842,
+          "url": "https://i.pinimg.com/474x/8b/b7/7a/8bb77abf0a4ea3c87e7da234dd1ace7e.jpg"
+        },
+        "736x": {
+          "width": 720,
+          "height": 1280,
+          "url": "https://i.pinimg.com/736x/8b/b7/7a/8bb77abf0a4ea3c87e7da234dd1ace7e.jpg"
+        },
+        "orig": {
+          "width": 720,
+          "height": 1280,
+          "url": "https://i.pinimg.com/originals/8b/b7/7a/8bb77abf0a4ea3c87e7da234dd1ace7e.jpg"
+        }
+      }
+    }
+  ]
+}
